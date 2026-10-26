@@ -1,0 +1,241 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        :root{ 
+            --hue-neutral :25;
+            --hue-wrong:0;
+            --hue-correct:145;
+        }
+
+        body{
+            --hue: var(--hue-neutral);
+            padding:0;
+            margin:0;
+            display: flex;
+            flex-direction: column;
+            width: 100vw;
+            min-height: 100vh;
+            justify-content: center;
+            align-items: center;
+            background-color: #642900;
+        }
+
+        body.correct{
+            --hue:var(--hue-correct);
+            background-color: hsl(var(--hue),100%,20%);
+        }
+
+        body.wrong{
+            --hue:var(--hue-wrong);
+            background-color: hsl(var(--hue),100%,20%);
+        }
+
+        .container{
+            width: 800px;
+            max-width: 80%;
+            background-color: #f0f7ff;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 0 10px;
+        }
+
+        .btn-grid
+        {
+            display: grid;
+            grid-template-columns: repeat(2, auto);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .btn{
+            --hue:var(--hue-neutral);
+            border: 4px solid #a04400;
+            background-color: #a04400;
+            border-radius: 5px;
+            padding: 5px 10px;
+            color: white;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .btn:hover{
+            border-color: rgb(29, 29, 29);
+        }
+
+        .st-btn
+        {
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        .controls{
+            display: flex;
+            justify-content:center;
+            align-items: center;
+        }
+
+        .hide{
+            display: none;
+        }
+
+        .score {
+            margin-top: 10px;
+            text-align: center;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div id="q-con" class="hide">
+            <div id="question"></div>
+
+            <div id="ans-btns" class="btn-grid">
+                <button class="btn">answer-1</button>
+                <button class="btn">answer-2</button>
+                <button class="btn">answer-3</button>
+                <button class="btn">answer-4</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="st-btn" class="st-btn btn">start</button>
+            <button id="next-btn" class="next-btn btn hide">next</button>
+        </div>
+    </div>
+
+    <div class="score">
+        <span id="right-answer"></span>
+    </div>
+</body>
+
+<script>
+    const startButton = document.getElementById('st-btn');
+    const nextButton = document.getElementById('next-btn');
+    const questionContainer = document.getElementById('q-con');
+    const questionElement = document.getElementById('question');
+    const answerButtons = document.getElementById('ans-btns');
+    const scoreElement = document.getElementById('right-answer');
+
+    let shuffledQuestions = [];
+    let currentQuestionIndex = 0;
+    let score = 0;
+
+    const questions = [
+        {
+            question: 'Which language is primarily used to style web pages?',
+            answers: [
+                { text: 'HTML', correct: false },
+                { text: 'CSS', correct: true },
+                { text: 'Java', correct: false },
+                { text: 'Python', correct: false },
+            ],
+        },
+        {
+            question: 'Which method is used to display a message in the browser console?',
+            answers: [
+                { text: 'console.log()', correct: true },
+                { text: 'print()', correct: false },
+                { text: 'echo()', correct: false },
+                { text: 'show()', correct: false },
+            ],
+        },
+        {
+            question: 'Which HTML tag is used to create a hyperlink?',
+            answers: [
+                { text: '<link>', correct: false },
+                { text: '<href>', correct: false },
+                { text: '<a>', correct: true },
+                { text: '<url>', correct: false },
+            ],
+        },
+    ];
+
+    startButton.addEventListener('click', startGame);
+
+    nextButton.addEventListener('click', () => {
+        currentQuestionIndex += 1;
+        showNextQuestion();
+    });
+
+    function startGame() {
+        score = 0;
+        currentQuestionIndex = 0;
+        shuffledQuestions = [...questions].sort(() => Math.random() - 0.5);
+        scoreElement.textContent = '';
+        startButton.classList.add('hide');
+        questionContainer.classList.remove('hide');
+        showNextQuestion();
+    }
+
+    function showNextQuestion() {
+        resetState();
+
+        if (currentQuestionIndex >= shuffledQuestions.length) {
+            questionElement.textContent = `Quiz complete! You scored ${score} out of ${questions.length}.`;
+            scoreElement.textContent = `Score: ${score} / ${questions.length}`;
+            startButton.textContent = 'Restart';
+            startButton.classList.remove('hide');
+            nextButton.classList.add('hide');
+            return;
+        }
+
+        showQuestion(shuffledQuestions[currentQuestionIndex]);
+    }
+
+    function showQuestion(question) {
+        questionElement.textContent = question.question;
+
+        question.answers.forEach((answer) => {
+            const button = document.createElement('button');
+            button.textContent = answer.text;
+            button.classList.add('btn');
+
+            if (answer.correct) {
+                button.dataset.correct = 'true';
+            }
+
+            button.addEventListener('click', selectAnswer);
+            answerButtons.appendChild(button);
+        });
+    }
+
+    function resetState() {
+        document.body.classList.remove('correct', 'wrong');
+        nextButton.classList.add('hide');
+        answerButtons.replaceChildren();
+    }
+
+    function selectAnswer(event) {
+        const selectedButton = event.currentTarget;
+        const correct = selectedButton.dataset.correct === 'true';
+
+        document.body.classList.add(correct ? 'correct' : 'wrong');
+
+        if (correct) {
+            score += 1;
+        }
+
+        Array.from(answerButtons.children).forEach((button) => {
+            button.disabled = true;
+
+            if (button.dataset.correct === 'true') {
+                button.classList.add('correct');
+            }
+        });
+
+        nextButton.classList.remove('hide');
+    }
+</script>
+
+</html>
